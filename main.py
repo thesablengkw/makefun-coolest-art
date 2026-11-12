@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Entry for make.fun coolest-art-01: publish the staged artwork.
 
-The artwork, "The Lantern Ferry" — a giant goldfish carrying a glowing
-night-market festival on its back through ukiyo-e waves — ships in this
+The artwork, "The Lantern Ferry, Face-Forward" — a frontal giant
+goldfish wearing a festival crown of lantern stalls and paper banners,
+staring straight at the viewer over ukiyo-e waves — ships in this
 repository as ``art.jpg`` (JPEG bytes, 1024x1024, within the gate's
 1 MiB limit). This program copies it byte-for-byte to ``entry.png`` in
 the output directory, so every run writes exactly the same bytes and
 the judge sees the image exactly as it was made.
 """
 
+import hashlib
 import os
 import shutil
 from pathlib import Path
@@ -39,9 +41,14 @@ def main() -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(ARTWORK, dest)
     written = dest.stat().st_size
-    expected = ARTWORK.stat().st_size
-    if written != expected:
-        raise SystemExit(f"copy mismatch: wrote {written} of {expected} bytes")
+    if written != size:
+        raise SystemExit(f"copy mismatch: wrote {written} of {size} bytes")
+    # Byte-for-byte means byte-for-byte: hash both sides and compare, so a
+    # copy that merely matches in size but differs in content still fails.
+    src_hash = hashlib.sha256(ARTWORK.read_bytes()).hexdigest()
+    dst_hash = hashlib.sha256(dest.read_bytes()).hexdigest()
+    if src_hash != dst_hash:
+        raise SystemExit("copy mismatch: content hash differs from the artwork")
     print(f"wrote {dest} ({written} bytes)")
 
 
